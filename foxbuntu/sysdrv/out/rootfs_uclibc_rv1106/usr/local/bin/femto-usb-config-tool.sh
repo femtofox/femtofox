@@ -270,6 +270,13 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
     meshtastic_security_command+=" -o \"$meshtastic_legacy_admin\"" # add to the command list
   fi
   
+  # get meshtastic_cli= lines and run them
+  while IFS='=' read -r key value; do
+    log_message "Meshtastic CLI command found."
+    femto-meshtasticd-config.sh -m "$value" 3 "Meshtastic CLI command" 2>&1 | tee -a /tmp/femtofox-config.log
+    found_config=true
+  done < <(grep '^meshtastic_cli=' "$usb_config" | sed -E 's/^meshtastic_cli=["]?(.*[^"])["]?$/meshtastic_cli=\1/')
+
   if [ "$found_config" = true ]; then #if we found a config file containing valid data
     if [ "$update_wifi" = true ]; then #if wifi config found, restart wifi
       log_message "Making changes to wifi settings and restarting wifi."
