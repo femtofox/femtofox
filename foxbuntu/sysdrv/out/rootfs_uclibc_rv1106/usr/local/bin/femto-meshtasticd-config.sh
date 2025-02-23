@@ -47,9 +47,9 @@ meshtastic_update() {
   echo "${ref:+$ref}meshtastic --host $command"
   echo "Submitting to Meshtastic..."
   for retries in $(seq 1 $attempts); do
-    output=$(meshtastic --host --info | tee /dev/fd/2)
+    output=$(eval meshtastic --host $command 2>&1 | tee /dev/fd/2) # display the output on screen live. Use eval so quotes will be handled correctly in $command
     logger "$output"
-    if echo "$output" | grep -qiE "Abort|invalid|Error|refused|Errno|failed|Failed"; then
+    if echo "$output" | grep -qiE "Abort|invalid|Error|error|unrecognized|refused|Errno|failed|Failed"; then
       if [ "$retries" -lt $attempts ]; then
         local msg="${ref:+$ref}Meshtastic command failed, retrying ($(($retries + 1))/$attempts)..."
         echo "$msg"
