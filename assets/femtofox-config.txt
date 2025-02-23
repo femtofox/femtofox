@@ -21,6 +21,11 @@
 
 ### Meshtastic settings
 
+## Multiple meshtastic_cli lines can be added. This is important, as the Meshtastic CLI requires that different settings categories (such as device and lora) be handled in separate commands.
+## See Meshtastic CLI docs (https://meshtastic.org/docs/software/python/cli/) for more information.
+#meshtastic_cli="--set lora.modem_preset LONG_FAST"
+#meshtastic_cli="--set device.role CLIENT"
+
 ## Radio module to use. Options are:
 ##  "ebyte-e22-900m30s"
 ##  "ebyte-e22-900m22s"
