@@ -39,7 +39,8 @@ DEBIAN_FRONTEND=noninteractive apt install -y --option Dpkg::Options::="--force-
 
 echo "Installing dependencies for meshing-around and meshtastic cli..."
 #pip config set global.extra-index-url https://www.piwheels.org/simple
-pip3 install requests pyephem pytap2 meshtastic pypubsub geopy maidenhead beautifulsoup4 dadjokes schedule wikipedia googlesearch-python
+pip3 install requests pyephem pytap2 meshtastic pypubsub geopy maidenhead beautifulsoup4 dadjokes schedule wikipedia googlesearch-python pubsub datetime
+
 if [[ $? -eq 2 ]]; then echo "Error, step failed..."; fi
 
 echo "Downloading ttyd and enabling service..."
@@ -62,7 +63,8 @@ systemctl enable femto-boot-complete.service
 systemctl enable femto-wifi-mesh-control
 systemctl enable femto-watchclock-dog
 
-systemctl disable meshtasticd
+systemctl disable ttyd   # enabled on first boot
+systemctl disable meshtasticd   # enabled on first boot
 systemctl disable apt-daily.timer
 systemctl disable unattended-upgrades
 systemctl disable smbd nmbd # samba services, can be enabled via menu

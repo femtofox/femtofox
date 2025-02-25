@@ -44,11 +44,12 @@ meshtastic_update() {
   local command="$1"
   local attempts=$2
   local ref="$3: "
+  echo "${ref:+$ref}meshtastic --host $command"
   echo "Submitting to Meshtastic..."
   for retries in $(seq 1 $attempts); do
-    local output=$(meshtastic --host $command 2>&1 | tee $(if [ -e /dev/tty ]; then echo /dev/tty; else echo /dev/ttyFIQ0; fi))
-    logger $output
-    if echo "$output" | grep -qiE "Abort|invalid|Error|refused|Errno"; then
+    output=$(eval meshtastic --host $command 2>&1 | tee /dev/fd/2) # display the output on screen live. Use eval so quotes will be handled correctly in $command
+    logger "$output"
+    if echo "$output" | grep -qiE "Abort|invalid|Error|error|unrecognized|refused|Errno|failed|Failed"; then
       if [ "$retries" -lt $attempts ]; then
         local msg="${ref:+$ref}Meshtastic command failed, retrying ($(($retries + 1))/$attempts)..."
         echo "$msg"
@@ -177,8 +178,10 @@ get_meshtastic_settings() {
 
     eval "url_primary_channel='$(echo "$meshtastic_info" | sed -n 's/^Primary channel URL: //p')'"
     [[ "$1" != *"quiet"*  ]] && echo "url_primary_channel:$url_primary_channel"
-    eval "url_all_channels='$(echo "$meshtastic_info" | sed -n 's/^Complete URL (includes all channels): //p')'"
-    [[ "$1" != *"quiet"*  ]] && echo "url_all_channels:$url_all_channels"
+    if echo "$meshtastic_info" | grep -q "^Complete URL (includes all channels): "; then
+      url_all_channels=$(echo "$meshtastic_info" | sed -n 's/^Complete URL (includes all channels): //p')
+      [[ "$1" != *"quiet"* ]] && echo "url_all_channels:$url_all_channels"
+    fi
   fi
 }
 
