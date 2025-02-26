@@ -18,9 +18,9 @@
 ## Options are "enable" and "disable"
 #act_led="disable"
 
-### Software control
-## Software package names are filenames (without .sh suffix) in /usr/local/bin/packages. Multiple packages can be installed by separating them with commas.
-## Some software (such as Samba) normally requires user interaction to complete. In this case, a message will display on serial console and in the USB config log warning that you will need to run the "initialization" option in the software menu for that package. Internet connectivity is required for software installation.
+### Software installation
+## Software package names are filenames (without .sh suffix) in /usr/local/bin/packages
+## Multiple packages can be installed by separating them with commas
 #software_install="packageA,packageB"
 
 ### Meshtastic settings
