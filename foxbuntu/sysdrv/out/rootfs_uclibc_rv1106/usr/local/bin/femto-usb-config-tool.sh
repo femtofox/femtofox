@@ -310,18 +310,26 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
 
   # install software packages from software_install=
   package_dir="/usr/local/bin/packages"
+  export HOME=/root
   IFS=',' read -ra packages <<< "$software_install"
   for package in "${packages[@]}"; do
     if [[ -f "/usr/local/bin/packages/${package}.sh" ]]; then
       found_config=true
       log_message "Installing $($package_dir/${package}.sh -N) in non-interactive mode..." | tee -a /tmp/femtofox-config.log
-      set -o pipefail
-      $package_dir/${package}.sh -xi | tee -a /tmp/femtofox-config.log
-      exit_status=$?
-      set +o pipefail
-      if [ $exit_status -eq 0 ]; then
-        log_message "\033[0;32mInstallation of $($package_dir/${package}.sh -N) successful!\033[0m"
-      else
+      for i in {1..5}; do
+        set -o pipefail
+        $package_dir/${package}.sh -xi | tee -a /tmp/femtofox-config.log
+        last_install_attempt_state=${PIPESTATUS[0]}
+        set +o pipefail
+        if [ $last_install_attempt_state -eq 0 ]; then
+          log_message "\033[0;32mInstallation of $($package_dir/${package}.sh -N) successful!\033[0m"
+          break
+        fi
+        [ $i = 5 ] && log_message "Installation failed... Is internet connected?" && break
+        log_message "Installation failed ($((i+1))/5). Retrying..."
+        sleep 4
+      done
+      if [ $last_install_attempt_state -ne 0 ]; then
         log_message "\033[0;31mInstallation of $($package_dir/${package}.sh -N) unsuccessful!\033[0m"
         partial_failure=true
       fi
