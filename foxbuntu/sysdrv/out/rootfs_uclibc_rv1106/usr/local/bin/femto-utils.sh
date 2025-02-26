@@ -284,7 +284,7 @@ while getopts ":harsl:ipcnoSEC:R:v" opt; do
       replace_colors "$OPTARG"
     ;;
     v) # get foxbuntu version)
-      echo "Foxbuntu v$(grep -oP 'major=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'minor=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'patch=\K[0-9]+' /etc/foxbuntu-release)$(grep -oP 'hotfix=\K[a-z]+' /etc/foxbuntu-release)"
+      echo "Foxbuntu v$(grep -oP 'major=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'minor=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'patch=\K[0-9]+' /etc/foxbuntu-release)$(grep -oP 'hotfix=\K\S+' /etc/foxbuntu-release)"
     ;;
     \?) # Unknown argument)
       echo -e "Unknown argument $1.\n$help"
