@@ -20,6 +20,15 @@ if grep -qE '^first_boot=true' /etc/femto.conf; then
 fi
 
 exit_script() {
+  if [[ -n "$partial_failure" ]]; then
+    log_message "\033[0;31mPartial failure in usb-config-tool...\033[0m"
+    for _ in {1..2}; do #boot code
+      blink "1" && sleep 0.5
+    done
+    for _ in {1..2}; do #boot code
+      blink "0.25" && sleep 0.5
+    done
+  fi
   if [ ! -z "$usb_path" ]; then #if usb path is populated
     if ! df -T /mnt/usb 2>/dev/null | grep -qw 'ntfs'; then
       log_message "USB configuration script complete. Copying femtofox-config.log to USB drive."
@@ -130,8 +139,9 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
       meshtastic_private_key) meshtastic_private_key=$(escape_sed "$value") ;;
       meshtastic_admin_key) meshtastic_admin_key=$(escape_sed "$value") ;;
       dont_run_if_log_exists) dont_run_if_log_exists=$(escape_sed "$value") ;;
+      software_install) software_install=$(escape_sed "$value") ;;
     esac
-  done < <(grep -E '^(act_led|wifi_ssid|wifi_psk|wifi_country|meshtastic_lora_radio|timezone|meshtastic_url|meshtastic_legacy_admin|meshtastic_public_key|meshtastic_private_key|meshtastic_admin_key|dont_run_if_log_exists)=' "$usb_config")
+  done < <(grep -E '^(act_led|wifi_ssid|wifi_psk|wifi_country|meshtastic_lora_radio|timezone|meshtastic_url|meshtastic_legacy_admin|meshtastic_public_key|meshtastic_private_key|meshtastic_admin_key|dont_run_if_log_exists|software_install)=' "$usb_config")
   
   # Check if the log exits and if the dont_run_if_log_exists line is set in the script
   if $log_exists && [[ $dont_run_if_log_exists = "true" ]]; then
@@ -172,6 +182,13 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
     log_message "Updating Wi-Fi country in wpa_supplicant.conf to $wifi_country."
     found_config="true"
     update_wifi="true"
+  fi
+
+  if [ "$update_wifi" = true ]; then #if wifi config found, restart wifi
+    log_message "Making changes to wifi settings and restarting wifi."
+    wifi_command="$wifi_command -r"
+    eval $wifi_command 2>&1 | tee -a /tmp/femtofox-config.log
+    log_message "wpa_supplicant.conf updated and wifi restarted. Enabling Meshtastic wifi setting."
   fi
   
   #get meshtastic_lora_radio model, if specified, and copy appropriate yaml to /etc/meshtasticd/config.d/
@@ -214,12 +231,18 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
         radio="none"
       ;;
       *)
-        log_message "Invalid LoRa radio name: $meshtastic_lora_radio, ignoring."
+        log_message "\033[0;31mInvalid LoRa radio name: $meshtastic_lora_radio, ignoring.\033[0m"
+        partial_failure=true
       ;;
     esac
     if [[ -n "$radio" ]]; then # if a radio was found
       femto-meshtasticd-config.sh -l "$radio" -s 2>&1 | tee -a /tmp/femtofox-config.log # set the radio and restart the service
-      log_message "Set LoRa radio to $meshtastic_lora_radio, restarting Meshtasticd."
+      if [ $? -eq 0 ]; then
+        log_message "Set LoRa radio to $meshtastic_lora_radio, restarting Meshtasticd."
+      else
+        log_message "\033[0;31mSeting LoRa radio to $meshtastic_lora_radio FAILED, restarting Meshtasticd.\033[0m" | tee -a /tmp/femtofox-config.log
+        partial_failure=true
+      fi
     fi
   fi
   
@@ -227,6 +250,10 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
     timezone=$(echo "$timezone" | sed 's/\\//g')
     log_message "Updating system timezone to $timezone."
     femto-set-time.sh -t "$timezone"
+    if [ $? -eq 1 ]; then
+      partial_failure=true
+      log_message "\033[0;31mSeting timezone to $timezone FAILED.\033[0m" | tee -a /tmp/femtofox-config.log
+    fi
     found_config="true"
   fi
   
@@ -274,25 +301,54 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
   while IFS='=' read -r key value; do
     log_message "Meshtastic CLI command found."
     femto-meshtasticd-config.sh -m "$value" 3 "Meshtastic CLI command" 2>&1 | tee -a /tmp/femtofox-config.log
+    if [ $? -eq 1 ]; then
+      partial_failure=true
+      log_message "\033[0;31mMeshtastic CLI command \`meshtastic --host $value\` FAILED.\033[0m" | tee -a /tmp/femtofox-config.log
+    fi
     found_config=true
   done < <(grep '^meshtastic_cli=' "$usb_config" | sed -E 's/^meshtastic_cli=["]?(.*[^"])["]?$/meshtastic_cli=\1/')
 
-  if [ "$found_config" = true ]; then #if we found a config file containing valid data
-    if [ "$update_wifi" = true ]; then #if wifi config found, restart wifi
-      log_message "Making changes to wifi settings and restarting wifi."
-      wifi_command="$wifi_command -r"
-      eval $wifi_command 2>&1 | tee -a /tmp/femtofox-config.log
-      log_message "wpa_supplicant.conf updated and wifi restarted. Enabling Meshtastic wifi setting."
+  # install software packages from software_install=
+  package_dir="/usr/local/bin/packages"
+  IFS=',' read -ra packages <<< "$software_install"
+  for package in "${packages[@]}"; do
+    if [[ -f "/usr/local/bin/packages/${package}.sh" ]]; then
+      found_config=true
+      log_message "Installing $($package_dir/${package}.sh -N) in non-interactive mode..." | tee -a /tmp/femtofox-config.log
+      set -o pipefail
+      $package_dir/${package}.sh -xi | tee -a /tmp/femtofox-config.log
+      exit_status=$?
+      set +o pipefail
+      if [ $exit_status -eq 0 ]; then
+        log_message "\033[0;32mInstallation of $($package_dir/${package}.sh -N) successful!\033[0m"
+      else
+        log_message "\033[0;31mInstallation of $($package_dir/${package}.sh -N) unsuccessful!\033[0m"
+        partial_failure=true
+      fi
+    else
+      log_message "\033[0;31mSoftware package $package_dir/${package}.sh does not exist, ignoring...\033[0m"
+      partial_failure=true
     fi
+  done
+
+  if [ "$found_config" = true ]; then #if we found a config file containing valid data
     
     if [ "$meshtastic_url" != "" ]; then
       log_message "Connecting to Meshtastic radio and submitting $meshtastic_url"
       femto-meshtasticd-config.sh -q "$meshtastic_url" 2>&1 | tee -a /tmp/femtofox-config.log
+      if [ $? -eq 1 ]; then
+        partial_failure=true
+        log_message "\033[0;31mSetting Meshtastic URL to $meshtastic_url FAILED.\033[0m" | tee -a /tmp/femtofox-config.log
+      fi
     fi
     
     if [ "$meshtastic_security_command" != "femto-meshtasticd-config.sh" ]; then
       log_message "Connecting to Meshtastic radio and submitting $meshtastic_security_command"
       eval "$meshtastic_security_command" 2>&1 | tee -a /tmp/femtofox-config.log
+      if [ $? -eq 1 ]; then
+        partial_failure=true
+        log_message "\033[0;31mSetting Meshtastic security settings FAILED.\033[0m" | tee -a /tmp/femtofox-config.log
+      fi
     fi
     
     for _ in {1..10}; do #do our successful config boot code
