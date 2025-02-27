@@ -85,6 +85,12 @@ systemctl disable sound.target
 systemctl disable veritysetup.target
 systemctl disable systemd-pstore.service
 
+echo "Optimzing APT..."
+echo 'APT::Cache-Start 25165824;' | sudo tee /etc/apt/apt.conf.d/99lowmem
+echo 'Acquire::Languages "none";' | sudo tee /etc/apt/apt.conf.d/99disable-translations
+echo 'APT::Install-Recommends "false"; APT::Install-Suggests "false";' | sudo tee /etc/apt/apt.conf.d/99norecommends
+sudo dpkg --clear-avail
+
 echo "Adding femto and pico users/groups..."
 groupmod -n femto pico
 usermod -l femto pico
