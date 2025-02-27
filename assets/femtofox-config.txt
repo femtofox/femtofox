@@ -18,6 +18,10 @@
 ## Options are "enable" and "disable"
 #act_led="disable"
 
+### Software installation
+## Software package names are filenames (without .sh suffix) in /usr/local/bin/packages
+## Multiple packages can be installed by separating them with commas
+#software_install="packageA,packageB"
 
 ### Meshtastic settings
 

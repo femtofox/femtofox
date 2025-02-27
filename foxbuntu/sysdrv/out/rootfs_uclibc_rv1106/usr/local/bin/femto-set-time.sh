@@ -23,6 +23,19 @@ set_timezone() {
   echo "Setting time zone..."
   ln -f -s /usr/share/zoneinfo/$1 /etc/localtime >/dev/null 2>&1
   dpkg-reconfigure --frontend noninteractive tzdata >/dev/null 2>&1
+  if [ ! -f /usr/share/zoneinfo/$1 >/dev/null 2>&1 ]; then
+    echo -e "Invalid timezone: $1"
+    return 1
+  fi
+  desired_offset=$(TZ=$1 date +"%:z")
+  current_offset=$(date +"%:z")
+  if [ "$desired_offset" != "$current_offset" ]; then
+    echo -e "FAILED to set timezone to $1. Expected GMT offset: $desired_offset, but got: $current_offset"
+    return 1
+  else
+    echo "Set timezone to $current_offset"
+    return 0
+  fi
 }
 
 set_timestamp() {
@@ -46,9 +59,11 @@ while getopts ":t:T:h" opt; do
   case ${opt} in
     t)  # Option -t (timezone)
       set_timezone "$OPTARG"
+      [ $? -eq 1 ] && exit 1
     ;;
     T)  # Option -t (timestamp)
       set_timestamp "$OPTARG"
+      [ $? -eq 1 ] && exit 1 || exit 0
     ;;
     h)  # Option -h (help)
       echo -e "$help"

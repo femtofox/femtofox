@@ -92,10 +92,11 @@ Mnted drives:$mounted_drives"
 }
 
 os_info() {
-  local os_version="Foxbuntu v$(grep -oP 'major=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'minor=\K[0-9]+' /etc/foxbuntu-release)$(output=$(grep -o 'patch=[1-9][0-9]*' /etc/foxbuntu-release | cut -d= -f2) && [ -n "$output" ] && echo ".$output")$(grep -oP 'hotfix=\K[a-z]+' /etc/foxbuntu-release) ($(lsb_release -d | awk -F'\t' '{print $2}') $(lsb_release -c | awk -F'\t' '{print $2}'))"
+  local os_version="$(femto-utils.sh -v) ($(lsb_release -d | awk -F'\t' '{print $2}') $(lsb_release -c | awk -F'\t' '{print $2}'))"
   local system_uptime="$(uptime -p | awk '{$1=""; print $0}' | sed -e 's/ day\b/d/g' -e 's/ hour\b/h/g' -e 's/ hours\b/h/g' -e 's/ minute\b/m/g' -e 's/ minutes\b/m/g' | sed 's/,//g')"
   local kernel_active_modules="$(lsmod | awk 'NR>1 {print $1}' | tr '\n' ' ' && echo)"
   local kernel_boot_modules="$(modules=$(sed -n '6,$p' /etc/modules | sed ':a;N;$!ba;s/\n/, /g;s/, $//'); [ -z "$modules" ] && echo "none" || echo "$modules")"
+  local kernel_modules_blacklist="$(femto-kernel-modules.sh -y | sed 's/\x1B\[[0-9;]*m//g')" #remove underline
   local ttyd_enabled="$(femto-utils.sh -C "ttyd")"
   local logging_enabled="$(logging "check" | sed 's/\x1b\[[0-9;]*m//g')"
   local act_led="$(femto-utils.sh -a "check" | sed -r 's/\x1B\[[0-9;]*[mK]//g')" #remove color from output
@@ -107,6 +108,7 @@ Uptime:$system_uptime\n\
 System time:$(date)\n\
 K mods active:$kernel_active_modules\n\
 K boot mods:$kernel_boot_modules\n\
+K mod blcklst: $kernel_modules_blacklist
 Web terminal:$ttyd_enabled\n\
 Logging:$logging_enabled\n\
 Activity LED:$act_led"
@@ -284,7 +286,7 @@ while getopts ":harsl:ipcnoSEC:R:v" opt; do
       replace_colors "$OPTARG"
     ;;
     v) # get foxbuntu version)
-      echo "Foxbuntu v$(grep -oP 'major=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'minor=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'patch=\K[0-9]+' /etc/foxbuntu-release)$(grep -oP 'hotfix=\K[a-z]+' /etc/foxbuntu-release)"
+      echo "Foxbuntu v$(grep -oP 'major=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'minor=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'patch=\K[0-9]+' /etc/foxbuntu-release)$(grep -oP 'hotfix=\K\S+' /etc/foxbuntu-release)"
     ;;
     \?) # Unknown argument)
       echo -e "Unknown argument $1.\n$help"

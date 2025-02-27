@@ -109,11 +109,11 @@ log_message "Enabling meshtasticd service"
 systemctl enable meshtasticd
 
 #generate SSH keys
-log_message "Generating new SSH encryption keys. This can take a couple minutes..."
+log_message "Generating new SSH encryption keys. This can take a few minutes..."
 femto-utils.sh -E
 
 #generate ttyd SSL keys
-log_message "Generating new Web Terminal (ttyd) SSL encryption keys. This can take a couple minutes..."
+log_message "Generating new Web Terminal (ttyd) SSL encryption keys. This can take a few minutes..."
 /usr/local/bin/packages/ttyd.sh -k
 log_message "Enabling Web Terminal (ttyd) service..."
 systemctl enable ttyd
