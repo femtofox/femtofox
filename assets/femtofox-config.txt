@@ -57,6 +57,10 @@
 #meshtastic_admin_key="XX="
 #meshtastic_legacy_admin="false"
 
+## Meshtastic i2c state.
+## Enabling i2c without devices connected will lead to slowdowns and error messages.
+## Options are "enable" and "disable"
+meshtastic_i2c="disable"
 
 ### If the following line is uncommented, USB config will be skipped if a log file is present on the USB drive, indicating the tool has already been run on this system
 #dont_run_if_log_exists
