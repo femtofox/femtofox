@@ -13,7 +13,7 @@ Find out more in the sections below, or in the [Wiki](https://github.com/femtofo
 - [Installation guide](https://github.com/femtofox/femtofox/wiki/Getting-Started)
 - How to order
    - [Etsy (USA)](https://www.etsy.com/listing/1861858340/femtofox-pro-v1-kit-compact-arm-linux)
-   - [Tindie (UK)](tbc)
+   - [Tindie (UK)](https://www.tindie.com/products/edit/femtofox-pro-v1-kit-linux-meshtastic-node/)
 - [DIY instructions](https://github.com/femtofox/Femtofox_Community_Hardware)
 - [USB configuration tool](https://github.com/femtofox/femtofox/wiki/USB-Configuration-Tool)
 - [Building your own Foxbuntu image](https://github.com/femtofox/femtofox/wiki/Building-Foxbuntu-%28WSL%29)
@@ -47,13 +47,13 @@ Find out more in the sections below, or in the [Wiki](https://github.com/femtofo
 | Dimensions   | 63 x 54 x 19mm                                          |
 
 **Accomplished:**
-- [x] Meshtastic native client controlling a LoRa radio (see [supported hardware](supported_hardware.md))
-- [x] WIFI over USB (see [supported hardware](supported_hardware.md))
+- [x] Meshtastic native client controlling a LoRa radio (see [supported hardware](https://github.com/femtofox/femtofox/wiki/Supported-Hardware))
+- [x] WIFI over USB (see [supported hardware](https://github.com/femtofox/femtofox/wiki/Supported-Hardware))
 - [x] Ethernet over pins (see *Networking* below and wiring diagram at bottom of page)
 - [x] UART communications with Meshtastic nodes (2 pin pairs) such as RAK Wisblock
-- [x] USB serial communications with Meshtastic nodes (see [supported hardware](supported_hardware.md))
+- [x] USB serial communications with Meshtastic nodes (see [supported hardware](https://github.com/femtofox/femtofox/wiki/Supported-Hardware))
 - [x] USB mass storage
-- [x] Real time clock (RTC) support (see [supported hardware](supported_hardware.md))
+- [x] Real time clock (RTC) support (see [supported hardware](https://github.com/femtofox/femtofox/wiki/Supported-Hardware))
 - [x] Activity LED disabled. User LED will blink for 5 seconds when boot is complete
 - [x] Short pressing the "BOOT" button toggles wifi, 2-5 second press triggers reboot, 5+ second press shuts system down
 - [x] Ability to reconfigure wifi via USB flash drive
