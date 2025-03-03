@@ -27,6 +27,7 @@ Options are:
 -t             Stop Meshtasticd service
 -M "enable"    Enable/disable Meshtasticd service. Options: "enable" "disable"
 -S             Get Meshtasticd service state
+-I "enable"    Manage i2c state. Options: "enable" "disable" "check"
 -z             Upgrade Meshtasticd
 -x             Uninstall Meshtasticd
 -m             Meshtastic update tool. Syntax: \`femto-meshtasticd-config.sh -m \"--set security.admin_channel_enabled false\" 10 \"Disable legacy admin\"\`
@@ -186,7 +187,7 @@ get_meshtastic_settings() {
 }
 
 # Parse options
-while getopts ":hiC:gkl:q:uU:rR:aA:cpo:sM:Stwuxm" opt; do
+while getopts ":hiC:gkl:q:uU:rR:aA:cpo:sM:StI:wuxm" opt; do
   case ${opt} in
     h) # Option -h (help)
       echo -e "$help"
@@ -325,6 +326,26 @@ Nodes in db:$metadata_nodedbCount"
     t) # Option -t (stop Meshtasticd service)
       systemctl stop meshtasticd
       echo "Meshtasticd service stopped."
+      ;;
+    I) # Option -I (Manage i2c state. Options: "enable" "disable" "check")
+      yaml_file="/etc/meshtasticd/config.d/femto_config.yaml"
+      if [ "$OPTARG" = "enable" ]; then
+        echo -e "\nI2C:\n  I2CDevice: /dev/i2c-3" >> $yaml_file
+        femto-meshtasticd-config.sh -s
+      elif [ "$OPTARG" = "disable" ]; then
+        sed -i '/I2C:/,/I2CDevice: \/dev\/i2c-3/d' $yaml_file
+        femto-meshtasticd-config.sh -s
+      elif [ "$OPTARG" = "check" ]; then
+        if grep -q "I2C:" $yaml_file && grep -q "I2CDevice: /dev/i2c-3" $yaml_file; then
+          echo -e "\033[0;34menabled\033[0m"
+        else
+          echo -e "\033[0;31mdisabled\033[0m"
+        fi
+      else
+        echo "Invalid argument \`-I $OPTARG\`. Options are \`enable\` \`disable\` \`check\`."
+        echo -e "$help"
+        exit 1
+      fi
       ;;
     z) # Option -z (upgrade meshtasticd)
       apt update

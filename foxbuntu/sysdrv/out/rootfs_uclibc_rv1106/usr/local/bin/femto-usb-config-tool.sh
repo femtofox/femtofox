@@ -118,6 +118,8 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
   wifi_command="femto-network-config.sh"
   meshtastic_security_command="femto-meshtasticd-config.sh"
   dont_run_if_log_exists=""
+  software_install=""
+  meshtastic_i2c=""
     
   # Escape and read the fields from the USB config file if they exist
   while IFS='=' read -r key value; do
@@ -140,8 +142,9 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
       meshtastic_admin_key) meshtastic_admin_key=$(escape_sed "$value") ;;
       dont_run_if_log_exists) dont_run_if_log_exists=$(escape_sed "$value") ;;
       software_install) software_install=$(escape_sed "$value") ;;
+      meshtastic_i2c) meshtastic_i2c=$(escape_sed "$value") ;;
     esac
-  done < <(grep -E '^(act_led|wifi_ssid|wifi_psk|wifi_country|meshtastic_lora_radio|timezone|meshtastic_url|meshtastic_legacy_admin|meshtastic_public_key|meshtastic_private_key|meshtastic_admin_key|dont_run_if_log_exists|software_install)=' "$usb_config")
+  done < <(grep -E '^(act_led|wifi_ssid|wifi_psk|wifi_country|meshtastic_lora_radio|timezone|meshtastic_url|meshtastic_legacy_admin|meshtastic_public_key|meshtastic_private_key|meshtastic_admin_key|dont_run_if_log_exists|software_install|meshtastic_i2c)=' "$usb_config")
   
   # Check if the log exits and if the dont_run_if_log_exists line is set in the script
   if $log_exists && [[ $dont_run_if_log_exists = "true" ]]; then
@@ -338,6 +341,13 @@ if [ -f "$mount_point/femtofox-config.txt" ]; then
       partial_failure=true
     fi
   done
+
+  if [[ -n "$meshtastic_i2c" ]]; then # set meshtastic i2c state
+    femto-meshtasticd-config.sh -I $meshtastic_i2c 2>&1 | tee -a /tmp/femtofox-config.log
+    log_message "Set Meshtastic i2c state to \`$meshtastic_i2c\`."
+    found_config="true"
+  fi
+
 
   if [ "$found_config" = true ]; then #if we found a config file containing valid data
     

@@ -433,10 +433,11 @@ meshtastic_settings() {
       4 "Security settings" "" \
       5 "Mesh connectivity test" "" \
       6 "Manage Meshtasticd service" "" \
-      7 "Upgrade/install Meshtasticd" "" \
-      8 "Uninstall Meshtasticd" "" \
+      7 "Enable/disable i2c devices" "" \
+      8 "Upgrade/install Meshtasticd" "" \
+      9 "Uninstall Meshtasticd" "" \
       " " "" "" \
-      9 "Back to main menu" "" 3>&1 1>&2 2>&3)
+      10 "Back to main menu" "" 3>&1 1>&2 2>&3)
     [ $? -eq 1 ] && break # Exit the loop if the user selects "Cancel" or closes the dialog
     case $meshtastic_choice in
       1) # view node info)
@@ -593,21 +594,48 @@ meshtastic_settings() {
           esac
         done
       ;;
-      7) #Upgrade meshtasticd)
+      7) #i2c)
+        choice=""   # zero the choice before loading the submenu
+        while true; do
+          i2c_state=$(femto-utils.sh -R "$(femto-meshtasticd-config.sh -I check)")
+          choice=$(dialog --no-collapse --colors --cancel-label "Back" --title "Meshtastic i2c" --default-item "$choice" --menu "i2c is used for sensors and displays.\nCurrently \Zu$i2c_state." 12 42 5 \
+            $(if echo "$i2c_state" | grep -q 'disabled'; then echo "Enable i2c x"; fi) \
+            $(if echo "$i2c_state" | grep -q 'enabled'; then echo "Disable i2c x"; fi) \
+            " " "" \
+            "Back" "x" 3>&1 1>&2 2>&3)
+          [ $? -eq 1 ] && break # Exit the loop if the user selects "Cancel" or closes the dialog
+          case $choice in
+            "Enable i2c")
+              dialog --no-collapse --colors --title "$title" --yesno "Enable i2c?\n\nEnabling i2c without devices connected will lead to slowdowns and error messages." 9 47
+                if [ $? -eq 0 ]; then #unless cancel/no
+                  femto-meshtasticd-config.sh -I enable
+                fi
+            ;;
+            "Disable i2c")
+              dialog --no-collapse --colors --title "$title" --yesno "Disable i2c?\n\nDisabling i2c will only apply to Meshtastic, not to Foxbuntu." 9 50
+              if [ $? -eq 0 ]; then #unless cancel/no
+                femto-meshtasticd-config.sh -I disable
+              fi
+            ;;
+            "Back") break ;;
+          esac
+        done
+      ;;
+      8) #Upgrade meshtasticd)
         dialog --no-collapse --title "$title" --yesno "Upgrade Meshtasticd?\nRequires internet connection." 0 0
         if [ $? -eq 0 ]; then #unless cancel/no
           femto-meshtasticd-config.sh -z
           pause
         fi
       ;;
-      8) #uninstall meshtasticd)
+      9) #uninstall meshtasticd)
         dialog --no-collapse --colors --title "$title" --yesno "Uninstall Meshtasticd?\n\nFoxbuntu was designed with Meshtasticd integration in mind, and may behave unexpectedly if Meshtasticd is removed.\n\nThis will take the node \Zu\Z1OFFLINE\Zn and will not restart!" 0 0
         if [ $? -eq 0 ]; then
           femto-meshtasticd-config.sh -x
           dialog --no-collapse --colors --msgbox "Meshtasticd uninstalled. To purge all remnants, run \`\Zusudo apt purge\Zn\`." 8 40
         fi
       ;;
-      9)
+      10)
         return
       ;;
     esac
