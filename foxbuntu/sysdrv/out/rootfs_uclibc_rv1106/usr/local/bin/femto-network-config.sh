@@ -55,10 +55,10 @@ while getopts ":hx:Ts:p:c:eiwn:tr" opt; do
     T) # Option -T (toggle wifi state)
       if [ "$(cat /etc/wifi_state.txt)" == "up" ]; then
         logger "Toggling wifi off"
-        femto-network-config.sh -x "up"
+        femto-network-config.sh -x "down"
       else
         logger "Toggling wifi on"
-        femto-network-config.sh -x "down"
+        femto-network-config.sh -x "up"
       fi
       ;;
     s) # Option -s (ssid)
