@@ -48,6 +48,8 @@ wget -qO- https://api.github.com/repos/tsl0922/ttyd/releases/latest | grep "brow
 chmod +x /opt/ttyd/ttyd
 systemctl enable ttyd
 
+git clone https://github.com/pdxlocations/control.git /opt/control
+
 echo "Setting MOTD..."
 mv /etc/update-motd.d/10-help-text /etc/update-motd.d/10-help-text.bak
 mv /etc/update-motd.d/60-unminimize /etc/update-motd.d/60-unminimize.bak
