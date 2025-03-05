@@ -12,13 +12,13 @@ name="Control for Meshtastic"   # software name
 author="pdxlocations"   # software author - OPTIONAL
 description="Control for Meshtastic is a fully-featured Meshtastic configuration tool made for running in console, utilizing Curses.\n\nControl is installed by default on Femtofox and is used for Meshtastic configuration in femto-config. Uninstallation is not recommended."       # software description - OPTIONAL (but strongly recommended!)
 URL="https://github.com/pdxlocations/control"                       # software URL. Can contain multiple URLs - OPTIONAL
-options="hxiuglNADUOLGTI"       # script options in use by software package. For example, for a package with no service, exclude `edsrS`
+options="hxiuglNADUOLGTIC"       # script options in use by software package. For example, for a package with no service, exclude `edsrS`
 launch="python /opt/control/main.py --host"    # command to launch software, if applicable
 license="/opt/control/LICENSE"  # file to cat to display license
 location="/opt/control"        # install location REQUIRED if not apt installed. Generally, we use `/opt/software-name`
 license="$location/LICENSE"     # file to cat to display license
 license_name="GPL3"             # license name, such as MIT, GPL3, custom, whatever. short text string
-conflicts=""  # comma delineated plain-text list of packages with which this package conflicts. Blank if none. Use the name as it appears in the $name field of the other package. Extra plaintext is allowed, such as "packageA, packageB, any other software that uses the Meshtastic CLI"
+conflicts="\"Full control\" Meshtastic software, such as TC²-BBS and Meshing Around - but only while running."  # comma delineated plain-text list of packages with which this package conflicts. Blank if none. Use the name as it appears in the $name field of the other package. Extra plaintext is allowed, such as "packageA, packageB, any other software that uses the Meshtastic CLI"
 
 # install script
 install() {
@@ -29,7 +29,7 @@ install() {
   pip install -r $location/requirements.txt
   chown -R femto $location #give ownership of installation directory to $user
   git config --global --add safe.directory $location # prevents git error when updating
-  echo "user_message: To launch, run \`python $location/main.py --host\`"
+  echo "user_message: To launch, go to Meshtastic settings. Launching manually may conflict with \`full control\` Meshtastic software such as BBS."
   exit 0 # should be `exit 1` if operation failed
 }
 

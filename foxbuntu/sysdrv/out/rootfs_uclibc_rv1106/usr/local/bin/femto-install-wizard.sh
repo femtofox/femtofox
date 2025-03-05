@@ -73,8 +73,10 @@ wizard() {
             ;;
             5) # Full Meshtastic settings menu)
               femto-config -c && (
-                dialog --no-collapse --infobox "Loading Meshtastic settings menu...\n\nThis can take up to a minute." 6 45
+                dialog --no-collapse --infobox "Loading Meshtastic settings menu...\n\nStopping conflicting services, will restart after exit...\n\nThis can take up to a minute." 9 50
+                femto-utils.sh -A stop
                 python /opt/control/main.py --host
+                femto-utils.sh -A start
               )
             ;;
             6) # return to previous menu)

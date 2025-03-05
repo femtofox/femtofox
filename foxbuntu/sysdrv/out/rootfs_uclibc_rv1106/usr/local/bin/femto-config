@@ -532,8 +532,10 @@ meshtastic_settings() {
       ;;
       5) # Meshtastic settings)
         check_meshtasticd_running && (
-          dialog --no-collapse --infobox "Loading Meshtastic settings menu...\n\nThis can take up to a minute." 6 45
+          dialog --no-collapse --infobox "Loading Meshtastic settings menu...\n\nStopping conflicting services, will restart after exit...\n\nThis can take up to a minute." 9 50
+          femto-utils.sh -A stop
           python /opt/control/main.py --host
+          femto-utils.sh -A start
         )
       ;;
       6) #test mesh connectivity)

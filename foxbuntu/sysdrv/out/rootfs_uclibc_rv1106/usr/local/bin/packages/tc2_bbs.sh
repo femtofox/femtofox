@@ -20,7 +20,7 @@ service_name="mesh-bbs"   # the name of the service/s, such as `chrony`. REQUIRE
 location="/opt/TC2-BBS-mesh"   # install location REQUIRED if not apt installed. Generally, we use `/opt/software-name`
 license="$location/LICENSE"     # file to cat to display license
 license_name="GPL3"             # license name, such as MIT, GPL3, custom, whatever. short text string
-conflicts="Meshing Around, other \"full control\" packages"   # comma delineated plain-text list of packages with which this package conflicts. Blank if none. Use the name as it appears in the $name field of the other package. Extra plaintext is allowed, such as "packageA, packageB, any other software that uses the Meshtastic CLI"
+conflicts="Meshing Around, other \"full control\" Meshtastic software, Control (only when running)."   # comma delineated plain-text list of packages with which this package conflicts. Blank if none. Use the name as it appears in the $name field of the other package. Extra plaintext is allowed, such as "packageA, packageB, any other software that uses the Meshtastic CLI"
 
 # install script
 install() {
