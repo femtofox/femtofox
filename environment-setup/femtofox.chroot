@@ -48,6 +48,7 @@ wget -qO- https://api.github.com/repos/tsl0922/ttyd/releases/latest | grep "brow
 chmod +x /opt/ttyd/ttyd
 systemctl enable ttyd
 
+echo "Cloning Control for Meshtastic by pdxlocations"
 git clone https://github.com/pdxlocations/control.git /opt/control
 
 echo "Setting MOTD..."
