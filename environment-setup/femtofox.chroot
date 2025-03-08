@@ -66,6 +66,9 @@ systemctl enable femto-watchclock-dog
 systemctl disable ttyd   # enabled on first boot
 systemctl disable meshtasticd   # enabled on first boot
 systemctl disable apt-daily.timer
+systemctl disable apt-daily-upgrade.timer
+systemctl mask apt-daily.service # try prevent daily updates
+systemctl mask apt-daily-upgrade.service # try prevent daily updates
 systemctl disable unattended-upgrades
 systemctl disable smbd nmbd # samba services, can be enabled via menu
 systemctl disable NetworkManager
