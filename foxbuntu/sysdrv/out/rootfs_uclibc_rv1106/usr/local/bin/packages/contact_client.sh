@@ -9,18 +9,17 @@
 # Messages to the user (such as configuration instructions, explanatory error messages, etc) should be given as: `echo "user_message: text"`
 # Everything following `user_message: ` will be displayed prominently to the user, so it must the last thing echoed
 
-
 name="Contact"   # software name
 author="pdxlocations"   # software author - OPTIONAL
 description="A Text-Based Console UI for Meshtastic Nodes. Formerly called Curses Client.\nAfter install, run \`contact\` to launch."   # software description - OPTIONAL (but strongly recommended!)
 URL="https://github.com/pdxlocations/contact/"   # software URL. Can contain multiple URLs - OPTIONAL
 options="xiuglNADUOLGTCI"   # script options in use by software package. For example, for a package with no service, exclude `edsrS`
-launch="python /opt/contact/main.py --host"   # command to launch software, if applicable
+launch="echo \"Stopping conflicting services (if any), will restart after exit...\" && sudo femto-utils.sh -A stop && sudo -u ${SUDO_USER:-$(whoami)} env LANG=$LANG TERM=$TERM NCURSES_NO_UTF8_ACS=$NCURSES_NO_UTF8_ACS python /opt/contact/main.py --host && echo \"Restarting conflicting services (if any)...\" && sudo femto-utils.sh -A start"   # command to launch software, if applicable
 service_name=""   # the name of the service/s, such as `chrony`. REQUIRED if service options are in use. If multiple services, separate by spaces "service1 service2"
 location="/opt/contact"   # install location REQUIRED if not apt installed. Generally, we use `/opt/software-name`
 license="$location/LICENSE"     # file to cat to display license
 license_name="GPL3"             # license name, such as MIT, GPL3, custom, whatever. short text string.
-conflicts=""   # comma delineated plain-text list of packages with which this package conflicts. Blank if none. Use the name as it appears in the $name field of the other package. Extra plaintext is allowed, such as "packageA, packageB, any other software that uses the Meshtastic CLI"
+conflicts="\"Full control\" Meshtastic software, such as TC²-BBS and Meshing Around - but only while running."   # comma delineated plain-text list of packages with which this package conflicts. Blank if none. Use the name as it appears in the $name field of the other package. Extra plaintext is allowed, such as "packageA, packageB, any other software that uses the Meshtastic CLI"
 
 
 if [ $# -eq 0 ]; then

@@ -76,7 +76,7 @@ while getopts ":$options" opt; do
       ;;
     l) # Option -l (Run software)
       echo "Launching $name..."
-      sudo -u ${SUDO_USER:-$(whoami)} $launch 
+      eval "$launch" 
       ;;
     N) echo -e $name ;;
     A) echo -e $author ;;
