@@ -22,6 +22,7 @@ Options are:
 -E             Generate/overwrite SSH encryption keys
 -C "service"   Check if service is enabled, disabled, running
 -R "command"   Replace colors for dialog menus
+-A "stop"      Stop/start services that are using the meshtastic API so the Control for Meshtastic settings UI can run without interference. Options: "stop" "start"
 -v             Get Foxbuntu version
 EOF
 )
@@ -222,7 +223,7 @@ replace_colors() {
   echo "$input"
 }
 
-while getopts ":harsl:ipcnoSEC:R:v" opt; do
+while getopts ":harsl:ipcnoSEC:R:A:v" opt; do
   case ${opt} in
     h) # Option -h (help)
       echo -e "$help"
@@ -284,6 +285,36 @@ while getopts ":harsl:ipcnoSEC:R:v" opt; do
     ;;
     R)  # replace colors)
       replace_colors "$OPTARG"
+    ;;
+    A) # Stop/start services that are using the meshtastic API)
+      # this code cycles through all the software packages and looks for ones that are installed, conflict with Control and have a service that is enabled. If it finds such a software package, it either stops or starts it, according to $OPTARG
+      if [[ $OPTARG == "stop" ]]; then
+        action_text="Stopping"
+        action="s"
+      elif [[ $OPTARG == "start" ]]; then
+        action_text="Starting"
+        action="r"
+      else
+        echo "\`$OPTARG\` is not a valid argument for -A. Options are \"stop\" and \"start\"."
+        echo -e "$help"
+        exit 1
+      fi
+
+      for file in /usr/local/bin/packages/*.sh; do
+        filename=$(basename "$file")
+
+        [[ "$filename" == femto_* ]] && continue # Skip files starting with "femto_"
+
+        if sudo "$file" -I; then
+          if echo "$(sudo "$file" -C)" | grep -q "\"full control\" Meshtastic software"; then
+            service_state=$(sudo femto-utils.sh -C "$(sudo $file -E)")
+            if [[ $service_state =~ "enabled" ]] ; then
+              echo "$action_text $(sudo $file -N) service..."
+              eval "sudo $file -$action"
+            fi
+          fi
+        fi
+      done
     ;;
     v) # get foxbuntu version)
       echo "Foxbuntu v$(grep -oP 'major=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'minor=\K[0-9]+' /etc/foxbuntu-release).$(grep -oP 'patch=\K[0-9]+' /etc/foxbuntu-release)$(grep -oP 'hotfix=\K\S+' /etc/foxbuntu-release)"

@@ -48,6 +48,12 @@ wget -qO- https://api.github.com/repos/tsl0922/ttyd/releases/latest | grep "brow
 chmod +x /opt/ttyd/ttyd
 systemctl enable ttyd
 
+echo "Cloning Control for Meshtastic by pdxlocations"
+git clone https://github.com/pdxlocations/control.git /opt/control
+pip install -r /opt/control/requirements.txt
+chown -R femto /opt/control
+git config --global --add safe.directory /opt/control # prevents git error when updating
+
 echo "Setting MOTD..."
 mv /etc/update-motd.d/10-help-text /etc/update-motd.d/10-help-text.bak
 mv /etc/update-motd.d/60-unminimize /etc/update-motd.d/60-unminimize.bak
