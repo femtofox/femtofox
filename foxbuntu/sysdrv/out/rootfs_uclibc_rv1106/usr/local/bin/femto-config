@@ -535,6 +535,7 @@ meshtastic_settings() {
           dialog --no-collapse --infobox "Loading Meshtastic settings menu...\n\nStopping conflicting services, will restart after exit...\n\nThis can take up to a minute." 9 50
           femto-utils.sh -A stop
           python /opt/control/main.py --host
+          echo "Restarting conflicting services..."
           femto-utils.sh -A start
         )
       ;;

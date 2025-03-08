@@ -13,7 +13,7 @@ author="pdxlocations"   # software author - OPTIONAL
 description="Control for Meshtastic is a fully-featured Meshtastic configuration tool made for running in console, utilizing Curses.\n\nControl is installed by default on Femtofox and is used for Meshtastic configuration in femto-config. Uninstallation is not recommended."       # software description - OPTIONAL (but strongly recommended!)
 URL="https://github.com/pdxlocations/control"                       # software URL. Can contain multiple URLs - OPTIONAL
 options="hxiuglNADUOLGTIC"       # script options in use by software package. For example, for a package with no service, exclude `edsrS`
-launch="python /opt/control/main.py --host"    # command to launch software, if applicable
+launch="echo \"Stopping conflicting services (if any), will restart after exit...\" && sudo femto-utils.sh -A stop && sudo -u ${SUDO_USER:-$(whoami)} env LANG=$LANG TERM=$TERM NCURSES_NO_UTF8_ACS=$NCURSES_NO_UTF8_ACS python /opt/control/main.py --host && echo \"Restarting conflicting services (if any)...\" && sudo femto-utils.sh -A start"   # command to launch software, if applicable
 license="/opt/control/LICENSE"  # file to cat to display license
 location="/opt/control"        # install location REQUIRED if not apt installed. Generally, we use `/opt/software-name`
 license="$location/LICENSE"     # file to cat to display license
