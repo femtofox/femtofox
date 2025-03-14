@@ -187,7 +187,7 @@ get_meshtastic_settings() {
 }
 
 # Parse options
-while getopts ":hiC:gkl:q:uU:rR:aA:cpo:sM:StI:wuxm" opt; do
+while getopts ":hiC:gkl:q:uU:rR:aA:cpo:sM:StI:wuzxm" opt; do
   case ${opt} in
     h) # Option -h (help)
       echo -e "$help"
