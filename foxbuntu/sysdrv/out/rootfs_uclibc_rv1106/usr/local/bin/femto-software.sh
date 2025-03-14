@@ -9,8 +9,9 @@ install() {
 
   echo "Installing $($package_dir/$1.sh -N)..."
   # Run the installation script, capturing the output and displaying it in real time
-  output=$($package_dir/$1.sh -i | tee /dev/tty)
-  install_status=$?  # Capture the exit status of the eval command
+  output="$($package_dir/$1.sh -i 2>&1 | tee /dev/tty)"
+  install_status=$([[ "$output" == *"failed"* ]] && echo 1 || echo 0)
+ # Capture the exit status of the eval command
   if [ ${#output} -gt 2048 ]; then   # Truncate to 2048 characters and append ellipsis and note if necessary
     truncated_output="${output:0:2000}...\nLOG TRUNCATED"
     if [[ "$output" =~ user_message: ]]; then # preserve user_message by adding to end of string
@@ -20,6 +21,8 @@ install() {
   fi
   user_message=$(echo "$output" | awk '/user_message: / {found=1; split($0, arr, "user_message: "); print arr[2]; next} found {print}' | sed '/^$/q') # grab the user_message, if present
   output=$(echo -e "$output" | sed '/user_message: /,$d') # remove the user message from the detailed output
+
+  echo $install_status
 
   if [ $install_status -eq 0 ]; then # if the installation was successful
     dialog --no-collapse --colors --title "$title" --beep --msgbox "\ZuInstallation of $($package_dir/$1.sh -N) successful!\Zn$([ -n "$user_message" ] && echo "\n\n$user_message")\n\nLog:\n$(echo $output)" 0 0 # if there's a user_message, display it with two preceeding line breaks
@@ -60,8 +63,8 @@ upgrade() {
   dialog --no-collapse --title "Upgrade $($package_dir/$1.sh -N)" --yesno "\nUpgrade requires internet connectivity.\n\nUpgrade $($package_dir/$1.sh -N)?" 10 40
   [ $? -eq 1 ] && return 1 #if cancel/no
   echo "Upgrading $($package_dir/$1.sh -N)..."
-  output=$(eval "$package_dir/$1.sh -g 2>&1 | tee /dev/tty")
-  install_status=$?  # Capture the exit status of the eval command
+  output="$($package_dir/$1.sh -g 2>&1 | tee /dev/tty)"
+  install_status=$([[ "$output" == *"failed"* ]] && echo 1 || echo 0)
   user_message=$(echo "$output" | awk '/user_message: / {found=1; split($0, arr, "user_message: "); print arr[2]; next} found {print}' | sed '/^$/q') # grab the user_message, if present
   output=$(echo "$output" | sed '/user_message: /,$d') # remove the user message from the detailed output
   if [ $install_status -eq 0 ]; then # if the installation was successful
@@ -78,7 +81,7 @@ package_intro() {
   # check if each field in the package info is supported by the package, and if so get it and insert it into the package info dialog
   dialog --no-collapse --colors --title "$title" --yes-label "Continue" --no-label "Back" --yesno "\
 $($package_dir/$1.sh -N)\n\
-  $(if $package_dir/$1.sh -O | grep -q 'A'; then echo -e "by $($package_dir/$1.sh -A)"; fi)\n\
+$(if $package_dir/$1.sh -O | grep -q 'A'; then echo -e "by $($package_dir/$1.sh -A)"; fi)\n\
 $(if $package_dir/$1.sh -O | grep -q 'D'; then echo "\n$($package_dir/$1.sh -D)"; fi)\n\
 \n\
 $(echo "Currently:       " && $package_dir/$1.sh -I && echo "\Zuinstalled\Zn" || echo "\Zunot installed\Zn")\n\
