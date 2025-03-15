@@ -14,6 +14,7 @@ Find out more in the sections below, or in the [Wiki](https://github.com/femtofo
 - How to order
    - [Etsy (USA)](https://www.etsy.com/listing/1861858340/femtofox-pro-v1-kit-compact-arm-linux)
    - [Tindie (UK)](https://www.tindie.com/products/nomdetom/femtofox-pro-v1-kit-linux-meshtastic-node/)
+   - [Etsy (UK)](https://www.etsy.com/uk/listing/1866094154/femtofox-pro-v1-kit-linux-meshtastic)
 - [DIY instructions](https://github.com/femtofox/Femtofox_Community_Hardware)
 - [USB configuration tool](https://github.com/femtofox/femtofox/wiki/USB-Configuration-Tool)
 - [Building your own Foxbuntu image](https://github.com/femtofox/femtofox/wiki/Building-Foxbuntu-%28WSL%29)
