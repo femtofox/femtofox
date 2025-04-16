@@ -1,6 +1,12 @@
 echo "Inside chroot environment..."
 echo "tmpfs /run tmpfs rw,nodev,nosuid,size=32M 0 0" | tee -a /etc/fstab
 
+echo "Tuning apt for low memory usage..."
+# disable unused repositories to allow apt operations to fit in available RAM
+sed 's/^[^#]*\(universe\|multiverse\|backports\)/# &/' -i /etc/apt/sources.list
+# tune starting cache memory allocation down from 20M to 5M
+echo 'APT::Cache-Start "5242880";' > /etc/apt/apt.conf.d/00-cache
+
 # Temporarily removed for SEGFAULT fix done after upgrade below.
 #echo "Installing Meshtastic..."
 
