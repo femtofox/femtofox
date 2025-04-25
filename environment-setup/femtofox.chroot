@@ -1,13 +1,6 @@
 echo "Inside chroot environment..."
 echo "tmpfs /run tmpfs rw,nodev,nosuid,size=32M 0 0" | tee -a /etc/fstab
 
-# Temporarily removed for SEGFAULT fix done after upgrade below.
-#echo "Installing Meshtastic..."
-
-#wget -qO- https://meshtastic.github.io/meshtastic-deb.asc | tee /etc/apt/keyrings/meshtastic-deb.asc >/dev/null
-#if [[ $? -eq 2 ]]; then echo "Error, step failed..."; fi
-#echo "deb [arch=all signed-by=/etc/apt/keyrings/meshtastic-deb.asc] https://meshtastic.github.io/deb stable main" | tee /etc/apt/sources.list.d/meshtastic-deb.list >/dev/null
-
 echo "Removing netdevice rules..."
 ln -s /dev/null /etc/udev/rules.d/80-net-setup-link.rules
 
@@ -23,7 +16,10 @@ ln -sf /usr/share/zoneinfo/UTC /etc/localtime
 
 echo "Installing packages..."
 apt update
-DEBIAN_FRONTEND=noninteractive apt install -y --option Dpkg::Options::="--force-confold" linux-firmware wireless-tools git python3.10-venv libgpiod-dev libyaml-cpp-dev libbluetooth-dev openssl libssl-dev libulfius-dev liborcania-dev evtest screen avahi-daemon protobuf-compiler telnet fonts-noto-color-emoji ninja-build chrony qrencode software-properties-common python-is-python3 python3.10-venv lsof spi-tools python3-luma.oled samba vim mtd-utils jq rsync
+DEBIAN_FRONTEND=noninteractive apt install -y --option Dpkg::Options::="--force-confold" \
+    linux-firmware wireless-tools git evtest screen telnet software-properties-common lsof ninja-build chrony samba vim mtd-utils jq rsync \
+    avahi-daemon protobuf-compiler qrencode spi-tools fonts-noto-color-emoji \
+    python3-luma.oled python-is-python3 python3.10-venv pipx
 if [[ $? -eq 2 ]]; then echo "Error, step failed..."; fi
 DEBIAN_FRONTEND=noninteractive apt upgrade -y --option Dpkg::Options::="--force-confold"
 
@@ -37,9 +33,15 @@ DEBIAN_FRONTEND=noninteractive apt install -y --option Dpkg::Options::="--force-
 #DEBIAN_FRONTEND=noninteractive apt install -y --option Dpkg::Options::="--force-confold" ./meshtasticd_2.5.11.8e2a3e5_armhf.deb
 #rm ./meshtasticd_2.5.11.8e2a3e5_armhf.deb
 
-echo "Installing dependencies for meshing-around and meshtastic cli..."
+echo "Add pipx global dir to the PATH"
+pipx ensurepath --global
+
+echo "Installing dependencies for meshing-around..."
 #pip config set global.extra-index-url https://www.piwheels.org/simple
-pip3 install requests pyephem pytap2 meshtastic pypubsub geopy maidenhead beautifulsoup4 dadjokes schedule wikipedia googlesearch-python pubsub datetime
+pip3 install requests pyephem pytap2 pypubsub geopy maidenhead beautifulsoup4 dadjokes schedule wikipedia googlesearch-python pubsub datetime
+
+echo "Install meshtastic cli in pipx-managed venv"
+pipx install --global "meshtastic[cli]"
 
 if [[ $? -eq 2 ]]; then echo "Error, step failed..."; fi
 
@@ -47,12 +49,6 @@ echo "Downloading ttyd and enabling service..."
 wget -qO- https://api.github.com/repos/tsl0922/ttyd/releases/latest | grep "browser_download_url" | grep "armhf" | cut -d '"' -f 4 | xargs wget -O /opt/ttyd/ttyd
 chmod +x /opt/ttyd/ttyd
 systemctl enable ttyd
-
-echo "Cloning Control for Meshtastic by pdxlocations"
-git clone https://github.com/pdxlocations/control.git /opt/control
-pip install -r /opt/control/requirements.txt
-chown -R femto /opt/control
-git config --global --add safe.directory /opt/control # prevents git error when updating
 
 echo "Setting MOTD..."
 mv /etc/update-motd.d/10-help-text /etc/update-motd.d/10-help-text.bak
