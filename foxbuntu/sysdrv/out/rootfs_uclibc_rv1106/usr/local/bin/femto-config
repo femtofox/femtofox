@@ -122,8 +122,9 @@ networking_settings() {
       6 "Set hostname" "" \
       7 "Test internet connection" "" \
       8 "Manage Meshtastic wifi sync" "" \
+      9 "Manage Avahi-Daemon service" "" \
       " " "" "" \
-      9 "Back to main menu" "" 3>&1 1>&2 2>&3)
+      10 "Back to main menu" "" 3>&1 1>&2 2>&3)
     [ $? -eq 1 ] && break # Exit the loop if the user selects "Cancel" or closes the dialog
     case $networking_choice in
       1) # Turn Wi-Fi on/off)
@@ -235,6 +236,68 @@ networking_settings() {
         done
       ;;
       9)
+        choice=""   # zero the choice before loading the submenu
+        while true; do
+          local name="avahi-daemon"
+          echo "Checking $name service state..."
+          local service_state="$(femto-utils.sh -R "$(femto-utils.sh -C "$name")")"
+          choice=$(dialog --no-collapse --colors --help-button --cancel-label "Back" --title "$name Service" --default-item "$choice" --menu "Avahi-Daemon service is $service_state" 16 60 5 \
+            "View detailed service status" "x" \
+            " " "" \
+            "Start/restart service" "x" \
+            $(if ! echo "$service_state" | grep -q 'not running'; then echo "Stop service x"; fi) \
+            " " "" \
+            $(if echo "$service_state" | grep -q 'disabled'; then echo "Enable service x"; fi) \
+            $(if echo "$service_state" | grep -q 'enabled'; then echo "Disable service x"; fi) \
+            " " "" \
+            "Back to previous menu" "x" 3>&1 1>&2 2>&3)
+          exit_status=$? # This line checks the exit status of the dialog command
+          if [ $exit_status -eq 1 ]; then # Exit the loop if the user selects "Cancel" or closes the dialog
+            break
+          elif [ $exit_status -eq 2 ]; then # Help ("extra") button
+            dialog --no-collapse --colors --title "$name service help" --msgbox "The $name service advertises the Meshtastic node on the local LAN, allowing the Android app to detect it. Without Avahi, you will need to manually enter the Femtofox's IP address in the app to connect.\n" 0 0
+          else
+            case $choice in
+              "View detailed service status") 
+                echo "Getting $name service status..."
+                dialog --no-collapse --title "$name service status" --msgbox "$(systemctl status $name)" 0 0
+              ;;
+              "Start/restart service") 
+                dialog --no-collapse --title "$title" --yesno "Start/restart $name service?" 7 45
+                if [ $? -eq 0 ]; then #unless cancel/no
+                  systemctl restart $name
+                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl restart $name\Zn\` command to system.\n\n$name should be running." 10 60
+                fi
+              ;;
+              "Stop service")
+                dialog --no-collapse --colors --title "$title" --yesno "Stop $name service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn.\n\n$name will automatically restart on boot service if enabled." 11 50
+                if [ $? -eq 0 ]; then #unless cancel/no
+                  systemctl stop $name
+                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl stop $name\Zn\` command to system.\n\n$name should be stopped." 9 60
+                fi
+              ;;
+              "Enable service")
+                dialog --no-collapse --title "$title" --yesno "Enable $name service?" 6 45
+                if [ $? -eq 0 ]; then #unless cancel/no
+                  systemctl enable $name
+                  systemctl start $name
+                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl enable $name\Zn\` and \`\Zusystemctl start $name\Zn\` commands to system.\n\n$name should be running." 10 60
+                fi
+              ;;
+              "Disable service")
+                dialog --no-collapse --colors --title "$title" --yesno "Disable $name service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn and will not restart!" 9 50
+                if [ $? -eq 0 ]; then #unless cancel/no
+                  systemctl disable $name
+                  systemctl stop $name
+                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl disable $name\Zn\` and \`\Zusystemctl stop $name\Zn\` commands to system.\n\n$name should be disabled and stopped." 10 60
+                fi
+              ;;
+              "Back to previous menu") break ;; 
+            esac
+          fi
+        done
+      ;;
+      10)
         return
       ;;
     esac
