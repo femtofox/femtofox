@@ -79,6 +79,71 @@ check_meshtasticd_running() {
   fi
 }
 
+service_manager() {
+  choice=""   # zero the choice before loading the submenu
+  while true; do
+    local service_name=$1
+    local readable_name=$2
+    local help=$3
+    echo "Checking $readable_name service state..."
+    local service_state="$(femto-utils.sh -R "$(femto-utils.sh -C "$service_name")")"
+    choice=$(dialog --no-collapse --colors --help-button --cancel-label "Back" --title "$readable_name Service" --default-item "$choice" --menu "Avahi-Daemon service is $service_state" 16 60 5 \
+      "View detailed service status" "x" \
+      " " "" \
+      "Start/restart service" "x" \
+      $(if ! echo "$service_state" | grep -q 'not running'; then echo "Stop service x"; fi) \
+      " " "" \
+      $(if echo "$service_state" | grep -q 'disabled'; then echo "Enable service x"; fi) \
+      $(if echo "$service_state" | grep -q 'enabled'; then echo "Disable service x"; fi) \
+      " " "" \
+      "Back to previous menu" "x" 3>&1 1>&2 2>&3)
+    exit_status=$? # This line checks the exit status of the dialog command
+    if [ $exit_status -eq 1 ]; then # Exit the loop if the user selects "Cancel" or closes the dialog
+      break
+    elif [ $exit_status -eq 2 ]; then # Help ("extra") button
+      dialog --no-collapse --colors --title "$readable_name service help" --msgbox "$3" 0 0
+    else
+      case $choice in
+        "View detailed service status") 
+          echo "Getting $readable_name service status..."
+          dialog --no-collapse --title "$readable_name service status" --msgbox "$(systemctl status $service_name)" 0 0
+        ;;
+        "Start/restart service") 
+          dialog --no-collapse --title "$title" --yesno "Start/restart $readable_name service?" 7 45
+          if [ $? -eq 0 ]; then #unless cancel/no
+            systemctl restart $service_name
+            dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl restart $service_name\Zn\` command to system.\n\n$readable_name should be running." 10 60
+          fi
+        ;;
+        "Stop service")
+          dialog --no-collapse --colors --title "$title" --yesno "Stop $readable_name service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn.\n\n$readable_name will automatically restart on boot service if enabled." 11 50
+          if [ $? -eq 0 ]; then #unless cancel/no
+            systemctl stop $service_name
+            dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl stop $service_name\Zn\` command to system.\n\n$readable_name should be stopped." 9 60
+          fi
+        ;;
+        "Enable service")
+          dialog --no-collapse --title "$title" --yesno "Enable $readable_name service?" 6 45
+          if [ $? -eq 0 ]; then #unless cancel/no
+            systemctl enable $service_name
+            systemctl start $service_name
+            dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl enable $service_name\Zn\` and \`\Zusystemctl start $service_name\Zn\` commands to system.\n\n$readable_name should be running." 10 60
+          fi
+        ;;
+        "Disable service")
+          dialog --no-collapse --colors --title "$title" --yesno "Disable $readable_name service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn and will not restart!" 9 50
+          if [ $? -eq 0 ]; then #unless cancel/no
+            systemctl disable $service_name
+            systemctl stop $service_name
+            dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl disable $service_name\Zn\` and \`\Zusystemctl stop $service_name\Zn\` commands to system.\n\n$readable_name should be disabled and stopped." 10 60
+          fi
+        ;;
+        "Back to previous menu") break ;; 
+      esac
+    fi
+  done
+}
+
 wifi_config() {
   local title2="Wi-Fi (wlan0) Settings"
   local config=$(dialog --no-collapse --title "$title2" --form "↑ ↓ to navigate, [ESC] to cancel." 10 45 0 \
@@ -175,127 +240,10 @@ networking_settings() {
         dialog --no-collapse --title "Internet connectivity test" --colors --msgbox "$(femto-utils.sh -R "$(femto-network-config.sh -t)")" 9 40
       ;;
       8) # Manage Meshtastic wifi sync)
-        choice=""   # zero the choice before loading the submenu
-        while true; do
-          echo "Checking Meshtastic wifi sync service state..."
-          local service_state="$(femto-utils.sh -R "$(femto-utils.sh -C "femto-wifi-mesh-control")")"
-          choice=$(dialog --no-collapse --colors --help-button --cancel-label "Back" --title "Meshtastic wifi sync Service" --default-item "$choice" --menu "Meshtastic wifi sync service is $service_state" 16 60 5 \
-            "View detailed service status" "x" \
-            " " "" \
-            "Start/restart service" "x" \
-            $(if ! echo "$service_state" | grep -q 'not running'; then echo "Stop service x"; fi) \
-            " " "" \
-            $(if echo "$service_state" | grep -q 'disabled'; then echo "Enable service x"; fi) \
-            $(if echo "$service_state" | grep -q 'enabled'; then echo "Disable service x"; fi) \
-            " " "" \
-            "Back to previous menu" "x" 3>&1 1>&2 2>&3)
-          exit_status=$? # This line checks the exit status of the dialog command
-          if [ $exit_status -eq 1 ]; then # Exit the loop if the user selects "Cancel" or closes the dialog
-            break
-          elif [ $exit_status -eq 2 ]; then # Help ("extra") button
-            dialog --no-collapse --colors --title "Meshtastic wifi sync service help" --msgbox "The Meshtastic wifi sync service synchronizes system wifi settings with Meshtastic wifi settings. This allows you to use Meshtastic's remote node administration feature to enable/disable wifi.\n\nIn future, this will also allow you to reconfigure SSID and password.\n" 0 0
-          else
-            case $choice in
-              "View detailed service status") 
-                echo "Getting Meshtastic wifi sync service status..."
-                dialog --no-collapse --title "Meshtastic wifi sync service status" --msgbox "$(systemctl status femto-wifi-mesh-control)" 0 0
-              ;;
-              "Start/restart service") 
-                dialog --no-collapse --title "$title" --yesno "Start/restart Meshtastic wifi sync service?" 7 45
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl restart femto-wifi-mesh-control
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl restart femto-wifi-mesh-control wifi sync\Zn\` command to system.\n\nMeshtastic wifi sync should be running." 10 60
-                fi
-              ;;
-              "Stop service")
-                dialog --no-collapse --colors --title "$title" --yesno "Stop Meshtastic wifi sync service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn.\n\nMeshtastic wifi sync will automatically restart on boot service if enabled." 11 50
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl stop femto-wifi-mesh-control
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl stop femto-wifi-mesh-control\Zn\` command to system.\n\nMeshtastic wifi sync should be stopped." 9 60
-                fi
-              ;;
-              "Enable service")
-                dialog --no-collapse --title "$title" --yesno "Enable Meshtastic wifi sync service?" 6 45
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl enable femto-wifi-mesh-control
-                  systemctl start femto-wifi-mesh-control
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl enable femto-wifi-mesh-control\Zn\` and \`\Zusystemctl start femto-wifi-mesh-control\Zn\` commands to system.\n\nMeshtastic wifi sync should be running." 10 60
-                fi
-              ;;
-              "Disable service")
-                dialog --no-collapse --colors --title "$title" --yesno "Disable Meshtastic wifi sync service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn and will not restart!" 9 50
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl disable femto-wifi-mesh-control
-                  systemctl stop femto-wifi-mesh-control
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl disable femto-wifi-mesh-control\Zn\` and \`\Zusystemctl stop femto-wifi-mesh-control\Zn\` commands to system.\n\nMeshtastic wifi sync should be disabled and stopped." 10 60
-                fi
-              ;;
-              "Back to previous menu") break ;; 
-            esac
-          fi
-        done
+        service_manager "femto-wifi-mesh-control" "Meshtastic wifi sync" "The Meshtastic wifi sync service synchronizes system wifi settings with Meshtastic wifi settings. This allows you to use Meshtastic's remote node administration feature to enable/disable wifi.\n\nIn future, this will also allow you to reconfigure SSID and password.\n"
       ;;
-      9)
-        choice=""   # zero the choice before loading the submenu
-        while true; do
-          local name="avahi-daemon"
-          echo "Checking $name service state..."
-          local service_state="$(femto-utils.sh -R "$(femto-utils.sh -C "$name")")"
-          choice=$(dialog --no-collapse --colors --help-button --cancel-label "Back" --title "$name Service" --default-item "$choice" --menu "Avahi-Daemon service is $service_state" 16 60 5 \
-            "View detailed service status" "x" \
-            " " "" \
-            "Start/restart service" "x" \
-            $(if ! echo "$service_state" | grep -q 'not running'; then echo "Stop service x"; fi) \
-            " " "" \
-            $(if echo "$service_state" | grep -q 'disabled'; then echo "Enable service x"; fi) \
-            $(if echo "$service_state" | grep -q 'enabled'; then echo "Disable service x"; fi) \
-            " " "" \
-            "Back to previous menu" "x" 3>&1 1>&2 2>&3)
-          exit_status=$? # This line checks the exit status of the dialog command
-          if [ $exit_status -eq 1 ]; then # Exit the loop if the user selects "Cancel" or closes the dialog
-            break
-          elif [ $exit_status -eq 2 ]; then # Help ("extra") button
-            dialog --no-collapse --colors --title "$name service help" --msgbox "The $name service advertises the Meshtastic node on the local LAN, allowing the Android app to detect it. Without Avahi, you will need to manually enter the Femtofox's IP address in the app to connect.\n" 0 0
-          else
-            case $choice in
-              "View detailed service status") 
-                echo "Getting $name service status..."
-                dialog --no-collapse --title "$name service status" --msgbox "$(systemctl status $name)" 0 0
-              ;;
-              "Start/restart service") 
-                dialog --no-collapse --title "$title" --yesno "Start/restart $name service?" 7 45
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl restart $name
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl restart $name\Zn\` command to system.\n\n$name should be running." 10 60
-                fi
-              ;;
-              "Stop service")
-                dialog --no-collapse --colors --title "$title" --yesno "Stop $name service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn.\n\n$name will automatically restart on boot service if enabled." 11 50
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl stop $name
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl stop $name\Zn\` command to system.\n\n$name should be stopped." 9 60
-                fi
-              ;;
-              "Enable service")
-                dialog --no-collapse --title "$title" --yesno "Enable $name service?" 6 45
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl enable $name
-                  systemctl start $name
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl enable $name\Zn\` and \`\Zusystemctl start $name\Zn\` commands to system.\n\n$name should be running." 10 60
-                fi
-              ;;
-              "Disable service")
-                dialog --no-collapse --colors --title "$title" --yesno "Disable $name service?\n\nThis will take the node \Zu\Z1OFFLINE\Zn and will not restart!" 9 50
-                if [ $? -eq 0 ]; then #unless cancel/no
-                  systemctl disable $name
-                  systemctl stop $name
-                  dialog --no-collapse --colors --msgbox "Sent \`\Zusystemctl disable $name\Zn\` and \`\Zusystemctl stop $name\Zn\` commands to system.\n\n$name should be disabled and stopped." 10 60
-                fi
-              ;;
-              "Back to previous menu") break ;; 
-            esac
-          fi
-        done
+      9) # Manage avahi)
+        service_manager "avahi-daemon" "Avahi Daemon" "The Avahi-Daemon service advertises the Meshtastic node on the local LAN (often called a Bonjour service), allowing the Android app to detect it. Without Avahi, you will need to manually enter the Femtofox's IP address in the app to connect.\n"
       ;;
       10)
         return
