@@ -53,7 +53,7 @@ log_message "Resizing filesystem..."
 resize2fs /dev/mmcblk1p5
 resize2fs /dev/mmcblk1p6
 resize2fs /dev/mmcblk1p7
-log_message "Resizing filesystem complete"
+log_message "Resizing filesystem complete."
 
 	# allocate swap file
 if [ ! -f /swapfile ]; then # check if swap file already exists
@@ -65,21 +65,21 @@ if [ ! -f /swapfile ]; then # check if swap file already exists
   echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab > /dev/null
   log_message "Swap file allocated."
 else
-	log_message "Swap file already allocated, skipping"
+	log_message "Swap file already allocated, skipping..."
 fi
 
 # prevent randomized mac address for eth0. If `eth0`` is already present in /etc/network/interfaces, skip
 mac="$(awk '/Serial/ {print $3}' /proc/cpuinfo | tail -c 11 | sed 's/^\(.*\)/a2\1/' | sed 's/\(..\)/\1:/g;s/:$//')"
 file="/etc/network/interfaces"
 if ! grep -q "    hwaddress ether $mac" "$file"; then
-  log_message "Setting eth0 MAC address to $mac (derivative of CPU s/n)"
+  log_message "Setting eth0 MAC address to $mac (derivative of CPU s/n)..."
   awk -v mac="$mac" '
     { print }
     /allow-hotplug eth0/ { count=5 }
     count && --count == 0 { print "    hwaddress ether " mac }
   ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
 else
-  log_message "eth0 mac address already set in /etc/network/interfaces, skipping"
+  log_message "eth0 mac address already set in /etc/network/interfaces, skipping..."
 fi
 
 # Add term stuff to .bashrc
@@ -87,25 +87,25 @@ lines="export NCURSES_NO_UTF8_ACS=1
 export TERM=xterm-256color
 export LANG=C.UTF-8"
 if ! grep -Fxq "$lines" /home/femto/.bashrc; then # Check if the lines are already in .bashrc
+  log_message "Adding TERM, LANG and NCURSES_NO_UTF8_ACS to .bashrc..."
   echo "$lines" >> /home/femto/.bashrc
-  log_message "Added TERM, LANG and NCURSES_NO_UTF8_ACS to .bashrc"
 else
-  log_message "TERM, LANG and NCURSES_NO_UTF8_ACS already present in .bashrc, skipping"
+  log_message "TERM, LANG and NCURSES_NO_UTF8_ACS already present in .bashrc, skipping..."
 fi
 
 # Fix Compiler
+log_message "Adding compiler support..."
 cp /usr/lib/arm-linux-gnueabihf/libc_nonshared.a.keep /usr/lib/arm-linux-gnueabihf/libc_nonshared.a
-log_message "Added compiler support"
 
 # Add a cheeky alias to .bash_aliases
 if ! grep -Fxq "alias sfc='sudo femto-config'" /home/femto/.bashrc; then # Check if the lines are already in .bash_aliases
   echo "alias sfc='sudo femto-config'" >> /home/femto/.bashrc
   log_message "Added \`alias sfc='sudo femto-config'\` to .bashrc"
 else
-  log_message "\`alias sfc='sudo femto-config'\` already present in .bashrc, skipping"
+  log_message "\`alias sfc='sudo femto-config'\` already present in .bashrc, skipping..."
 fi
 
-log_message "Enabling meshtasticd service"
+log_message "Enabling meshtasticd service..."
 systemctl enable meshtasticd
 
 #generate SSH keys
